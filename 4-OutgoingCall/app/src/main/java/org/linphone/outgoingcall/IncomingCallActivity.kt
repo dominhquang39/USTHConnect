@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package org.linphone.incomingcall
+package org.linphone.outgoingcall
 
 import android.Manifest
 import android.content.pm.PackageManager
@@ -31,17 +31,6 @@ class IncomingCallActivity:  AppCompatActivity() {
     private lateinit var core: Core
 
     private val coreListener = object: CoreListenerStub() {
-        override fun onAccountRegistrationStateChanged(core: Core, account: Account, state: RegistrationState?, message: String) {
-            findViewById<TextView>(R.id.registration_status).text = message
-
-            if (state == RegistrationState.Failed) {
-                findViewById<Button>(R.id.connect).isEnabled = true
-            } else if (state == RegistrationState.Ok) {
-                findViewById<LinearLayout>(R.id.register_layout).visibility = View.GONE
-                findViewById<RelativeLayout>(R.id.call_layout).visibility = View.VISIBLE
-            }
-        }
-
         override fun onAudioDeviceChanged(core: Core, audioDevice: AudioDevice) {
             // This callback will be triggered when a successful audio device has been changed
         }
@@ -52,10 +41,10 @@ class IncomingCallActivity:  AppCompatActivity() {
         }
 
         override fun onCallStateChanged(
-            core: Core,
-            call: Call,
-            state: Call.State?,
-            message: String
+                core: Core,
+                call: Call,
+                state: Call.State?,
+                message: String
         ) {
             findViewById<TextView>(R.id.call_status).text = message
 
@@ -83,16 +72,18 @@ class IncomingCallActivity:  AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         setContentView(R.layout.incoming_call_activity)
 
         val factory = Factory.instance()
         factory.setDebugMode(true, "Hello Linphone")
         core = factory.createCore(null, null, this)
 
-        findViewById<Button>(R.id.connect).setOnClickListener {
-            login()
-            it.isEnabled = false
+        val username = intent.getStringExtra("username") ?: ""
+        val password = intent.getStringExtra("password") ?: ""
+        val domain = intent.getStringExtra("domain") ?: ""
+
+        if (username.isNotEmpty() && password.isNotEmpty() && domain.isNotEmpty()) {
+            login(username, password, domain)
         }
 
         findViewById<Button>(R.id.hang_up).isEnabled = false
@@ -145,15 +136,8 @@ class IncomingCallActivity:  AppCompatActivity() {
         }
     }
 
-    private fun login() {
-        val username = findViewById<EditText>(R.id.username).text.toString()
-        val password = findViewById<EditText>(R.id.password).text.toString()
-        val domain = findViewById<EditText>(R.id.domain).text.toString()
-        val transportType = when (findViewById<RadioGroup>(R.id.transport).checkedRadioButtonId) {
-            R.id.udp -> TransportType.Udp
-            R.id.tcp -> TransportType.Tcp
-            else -> TransportType.Tls
-        }
+    private fun login(username: String, password: String, domain: String) {
+        val transportType = TransportType.Tls
         val authInfo = Factory.instance().createAuthInfo(username, null, password, null, null, domain, null)
 
         val params = core.createAccountParams()

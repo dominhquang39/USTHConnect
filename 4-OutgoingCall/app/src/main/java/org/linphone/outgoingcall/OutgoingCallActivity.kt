@@ -20,16 +20,21 @@
 package org.linphone.outgoingcall
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.view.View
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContentProviderCompat.requireContext
 import org.linphone.core.*
 import org.linphone.core.tools.Log
 
 class OutgoingCallActivity: AppCompatActivity() {
     private lateinit var core: Core
+    private lateinit var username: String
+    private lateinit var password: String
+    private lateinit var domain: String
 
     private val coreListener = object: CoreListenerStub() {
         override fun onAccountRegistrationStateChanged(core: Core, account: Account, state: RegistrationState?, message: String) {
@@ -54,6 +59,16 @@ class OutgoingCallActivity: AppCompatActivity() {
             findViewById<TextView>(R.id.call_status).text = message
 
             when (state) {
+                Call.State.IncomingReceived -> {
+                    val intent = Intent(this@OutgoingCallActivity, IncomingCallActivity::class.java)
+                    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                    intent.putExtra("CALL_ID", call.callLog?.callId)
+                    intent.putExtra("username", username)
+                    intent.putExtra("password", password)
+                    intent.putExtra("domain", domain)
+                    intent.putExtra("transport_type", TransportType.Tls)
+                    startActivity(intent)
+                }
                 Call.State.OutgoingInit -> {
                     // First state an outgoing call will go through
                 }
@@ -177,9 +192,9 @@ class OutgoingCallActivity: AppCompatActivity() {
     }
 
     private fun login() {
-        val username = findViewById<EditText>(R.id.username).text.toString()
-        val password = findViewById<EditText>(R.id.password).text.toString()
-        val domain = findViewById<EditText>(R.id.domain).text.toString()
+        username = findViewById<EditText>(R.id.username).text.toString()
+        password = findViewById<EditText>(R.id.password).text.toString()
+        domain = findViewById<EditText>(R.id.domain).text.toString()
         val transportType = when (findViewById<RadioGroup>(R.id.transport).checkedRadioButtonId) {
             R.id.udp -> TransportType.Udp
             R.id.tcp -> TransportType.Tcp
