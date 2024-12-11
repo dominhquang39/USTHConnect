@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-permission android:name="android.permission.INTERNET"/>
+
+    <application
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@drawable/usth_logo"
+        android:label="@string/app_name"
+        android:roundIcon="@drawable/usth_logo"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.USTHConnect"
+        tools:targetApi="31">
+        <activity
+            android:name=".Home.EditProfile.ChangePicture_Activity"
+            android:exported="false" />
+        <activity
+            android:name=".Resource.Resource"
+            android:exported="false" />
+        <activity
+            android:name=".Schedule.Course.First_Course_Activity"
+            android:exported="false" />
+        <activity
+            android:name=".StudyBuddy.EditProfile.Edit_SB_Profile_Activity"
+            android:exported="false" />
+        <activity
+            android:name=".Resource.Second_Third_Year.Year_Course_Resource_Activity"
+            android:exported="false" />
+        <activity
+            android:name=".Resource.Second_Third_Year.Course_Year_Activity"
+            android:exported="false" />
+        <activity
+            android:name=".Resource.Second_Third_Year.Year_Activity"
+            android:exported="false" />
+        <activity
+            android:name=".Resource.First_Year.Course_Resource_Activity"
+            android:exported="false" />
+        <activity
+            android:name=".Resource.First_Year.Course_Semester_Activity"
+            android:exported="false" />
+        <activity
+            android:name=".Resource.First_Year.Semester_Activity"
+            android:exported="false" />
+        <activity
+            android:name=".Campus.Detail.Detail_Building_Activity"
+            android:exported="false" />
+        <activity
+            android:name=".Schedule.Course.Second_Course_Activity"
+            android:exported="false" />
+        <activity
+            android:name=".Schedule.Course.Third_Course_Activity"
+            android:exported="false" />
+        <activity
+            android:name=".Schedule.Course.List_Class_in_Course_Activity"
+            android:exported="false" />
+        <activity
+            android:name=".Schedule.Course.Program_Activity"
+            android:exported="false" />
+        <activity
+            android:name=".Home.EditProfile.Edit_Profile_Activity"
+            android:exported="false" />
+        <activity
+            android:name=".Login.Change_Password_Activity"
+            android:exported="false" />
+        <activity
+            android:name=".Resource.Resource_Activity"
+            android:exported="false" />
+        <activity
+            android:name=".StudyBuddy.Study_Buddy_Activity"
+            android:exported="false" />
+        <activity
+            android:name=".Campus.Campus_Activity"
+            android:exported="false" />
+        <activity
+            android:name=".Schedule.Schedule_Activity"
+            android:exported="false" />
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>

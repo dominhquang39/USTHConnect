@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "957160447780",
+    "project_id": "callpushnotification-33873",
+    "storage_bucket": "callpushnotification-33873.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:957160447780:android:e97988f9f91f44ff44ddb1",
+        "android_client_info": {
+          "package_name": "com.example.calling_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCFEjL9P6QPgk_skXO3vI8n_X4qUEHnbus"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
