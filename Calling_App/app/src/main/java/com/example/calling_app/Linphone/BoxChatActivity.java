@@ -1,6 +1,7 @@
 package com.example.calling_app.Linphone;
 
 import android.Manifest;
+import android.app.KeyguardManager;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -41,6 +42,7 @@ public class BoxChatActivity extends AppCompatActivity {
     private String username;
     private String password;
     private String box_chat;
+    public String domain = "sip.linphone.org";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -159,20 +161,58 @@ public class BoxChatActivity extends AppCompatActivity {
 
             // When a call is received
             if (state == Call.State.IncomingReceived) {
-                findViewById(R.id.incoming_call_layout).setVisibility(View.VISIBLE);
+                boolean isScreenLocked = isScreenLocked();
+                NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+                String channelId = "incoming_call_channel";
+                String channelName = "Incoming Call Notifications";
 
-                findViewById(R.id.incoming_toggle_speaker).setVisibility(View.GONE);
-                findViewById(R.id.incoming_mute_mic).setVisibility(View.GONE);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    NotificationChannel channel = new NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_HIGH);
+                    notificationManager.createNotificationChannel(channel);
+                }
 
-                findViewById(R.id.incoming_hang_up).setVisibility(View.VISIBLE);
-                findViewById(R.id.incoming_answer).setVisibility(View.VISIBLE);
+                Intent fullScreenIntent = new Intent(BoxChatActivity.this, IncomingCallActivity.class);
+                fullScreenIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                fullScreenIntent.putExtra("CALL_ID", call.getCallLog() != null ? call.getCallLog().getCallId() : null);
+                fullScreenIntent.putExtra("username", username);
+                fullScreenIntent.putExtra("password", password);
+                fullScreenIntent.putExtra("domain", domain);
+                fullScreenIntent.putExtra("transport_type", TransportType.Tls);
 
-                findViewById(R.id.incoming_hang_up).setEnabled(true);
-                findViewById(R.id.incoming_answer).setEnabled(true);
+                PendingIntent fullScreenPendingIntent = PendingIntent.getActivity(
+                        BoxChatActivity.this,
+                        0,
+                        fullScreenIntent,
+                        PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+                );
+
+                NotificationCompat.Builder notificationBuilder;
+
+                if (isScreenLocked) {
+                    // Full-screen notification for locked screen
+                    notificationBuilder = new NotificationCompat.Builder(BoxChatActivity.this, channelId)
+                            .setContentTitle(call.getRemoteAddress().getUsername())
+                            .setContentText("You have an incoming call")
+                            .setSmallIcon(R.mipmap.ic_launcher)
+                            .setFullScreenIntent(fullScreenPendingIntent, true)
+                            .setPriority(NotificationCompat.PRIORITY_HIGH)
+                            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                            .setCategory(NotificationCompat.CATEGORY_CALL);
+                } else {
+                    // Heads-up notification for unlocked screen
+                    notificationBuilder = new NotificationCompat.Builder(BoxChatActivity.this, channelId)
+                            .setContentTitle(call.getRemoteAddress().getUsername())
+                            .setContentText("You have an incoming call")
+                            .setSmallIcon(R.mipmap.ic_launcher)
+                            .setContentIntent(fullScreenPendingIntent)
+                            .setPriority(NotificationCompat.PRIORITY_HIGH)
+                            .setCategory(NotificationCompat.CATEGORY_CALL);
+                }
+
+                notificationManager.notify(1, notificationBuilder.build());
 
                 ((TextView) findViewById(R.id.incoming_remote_address)).setText(call.getRemoteAddress().getUsername());
                 String remoteAdress = call.getRemoteAddress().asStringUriOnly();
-                sendNotification("Incoming call from " + remoteAdress);
             } else if (state == Call.State.Connected) {
                 findViewById(R.id.incoming_mute_mic).setEnabled(true);
                 findViewById(R.id.incoming_toggle_speaker).setEnabled(true);
@@ -196,30 +236,9 @@ public class BoxChatActivity extends AppCompatActivity {
 
     };
 
-    private void sendNotification(String remoteAdress) {
-        NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel(CHANNEL_ID, "Incoming Call Notification", NotificationManager.IMPORTANCE_HIGH);
-            channel.setDescription("Noti for incoming");
-            notificationManager.createNotificationChannel(channel);
-        }
-
-        Intent intent = new Intent(this, IncomingCallActivity.class);
-        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
-
-        NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setSmallIcon(R.mipmap.ic_launcher)
-                .setContentTitle("Incoming Call")
-                .setContentText("Call from" + remoteAdress)
-                .setPriority(NotificationCompat.PRIORITY_HIGH)
-                .setAutoCancel(true)
-                .setContentIntent(pendingIntent);
-
-        Notification notification = notificationBuilder.build();
-        if (notificationManager != null) {
-            notificationManager.notify(1, notification);
-        }
+    private boolean isScreenLocked() {
+        KeyguardManager keyguardManager = (KeyguardManager) getSystemService(KEYGUARD_SERVICE);
+        return keyguardManager.isKeyguardLocked() || keyguardManager.isDeviceLocked();
     }
 
     // Incoming toggleSpeaker
@@ -382,7 +401,7 @@ public class BoxChatActivity extends AppCompatActivity {
 
     // Incoming Login
     private void incoming_login(String username, String password) {
-        String domain = "sip.linphone.org";
+        domain = "sip.linphone.org";
 
         TransportType transportType = TransportType.Tls;
 
@@ -417,7 +436,7 @@ public class BoxChatActivity extends AppCompatActivity {
 
     // Outgoing Login
     private void outgoing_login(String username, String password) {
-        String domain = "sip.linphone.org";
+        domain = "sip.linphone.org";
 
         TransportType transportType = TransportType.Tls;
 

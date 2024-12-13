@@ -27,7 +27,6 @@ import com.google.firebase.messaging.RemoteMessage;
 
 public class OncomingCallActivity extends AppCompatActivity {
 
-    public static final String CHANNEL_ID = "call_notification_id";
     private Core core;
     private String username;
     private String password;
@@ -92,8 +91,14 @@ public class OncomingCallActivity extends AppCompatActivity {
 
             switch (state) {
                 case IncomingReceived:
-                    String remoteAdress = call.getRemoteAddress().asStringUriOnly();
-                    sendNotification("Incoming call from " + remoteAdress);
+                    Intent intent = new Intent(OncomingCallActivity.this, IncomingCallActivity.class);
+                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                    intent.putExtra("CALL_ID", call.getCallLog().getCallId());
+                    intent.putExtra("username", username);
+                    intent.putExtra("password", password);
+                    intent.putExtra("domain", domain);
+                    intent.putExtra("transport_type", TransportType.Tls);
+                    startActivity(intent);
                     break;
                 case StreamsRunning:
                     findViewById(R.id.pause).setEnabled(true);
@@ -123,31 +128,6 @@ public class OncomingCallActivity extends AppCompatActivity {
         }
     };
 
-    private void sendNotification(String remoteAdress) {
-        NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel(CHANNEL_ID, "Incoming Call Notification", NotificationManager.IMPORTANCE_HIGH);
-            channel.setDescription("Noti for incoming");
-            notificationManager.createNotificationChannel(channel);
-        }
-
-        Intent intent = new Intent(this, IncomingCallActivity.class);
-        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
-
-        NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setSmallIcon(R.mipmap.ic_launcher)
-                .setContentTitle("Incoming Call")
-                .setContentText("Call from" + remoteAdress)
-                .setPriority(NotificationCompat.PRIORITY_HIGH)
-                .setAutoCancel(true)
-                .setContentIntent(pendingIntent);
-
-        Notification notification = notificationBuilder.build();
-        if (notificationManager != null) {
-            notificationManager.notify(1, notification);
-        }
-    }
 
     private void login() {
         username = ((EditText) findViewById(R.id.username)).getText().toString();

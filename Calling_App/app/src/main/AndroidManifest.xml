@@ -5,6 +5,9 @@
     <uses-feature
         android:name="android.hardware.camera"
         android:required="false" />
+    <uses-feature
+        android:name="android.hardware.telephony"
+        android:required="false" />
 
     <!-- GPT -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CAMERA" />
@@ -14,14 +17,18 @@
 <!--    <uses-permission android:name="android.permission.CAMERA" />-->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    <uses-permission android:name="android.permission.WAKE_LOCK"/>
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
 
 
     <!-- Linphone -->
     <!-- To be able to display contacts list & match calling/called numbers -->
     <uses-permission android:name="android.permission.READ_CONTACTS" /> <!-- Starting Android 13 we need to ask notification permission -->
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" /> <!-- Needed for full screen intent in incoming call notifications -->
-    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" /> <!-- To vibrate while receiving an incoming call -->
+   <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" /> <!-- To vibrate while receiving an incoming call -->
     <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.READ_PHONE_STATE"/>
+    <uses-permission android:name="android.permission.CALL_PHONE"/>
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <!--
  Needed for foreground service
     (https://developer.android.com/guide/components/foreground-services)
@@ -61,9 +68,6 @@
         android:theme="@style/Theme.Calling_App"
         tools:targetApi="31">
         <activity
-            android:name=".IncomingCallActivity"
-            android:exported="false" />
-        <activity
             android:name=".OncomingCallActivity"
             android:exported="false" />
         <activity
@@ -84,6 +88,11 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity> <!-- The following is mandatory to have our SDK to handle push automatically -->
+        <activity
+            android:name=".IncomingCallActivity"
+            android:launchMode="singleTask">
+        </activity>
+
         <service
             android:name=".FirebaseMessaging"
             android:exported="false">
