@@ -27,6 +27,7 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.example.calling_app.IncomingCallActivity;
+import com.example.calling_app.MyApplication;
 import com.example.calling_app.R;
 
 import org.linphone.core.Core;
@@ -35,8 +36,6 @@ import org.linphone.core.*;
 
 public class BoxChatActivity extends AppCompatActivity {
 
-    public static final String CHANNEL_ID = "call_notification_id";
-    private Core incoming_core;
     private Core outgoing_core;
 
     private String username;
@@ -58,41 +57,6 @@ public class BoxChatActivity extends AppCompatActivity {
 
         TextView textView = findViewById(R.id.box_chat_username);
         textView.setText(box_chat);
-
-        Factory factory = Factory.instance();
-        factory.setDebugMode(true, "Hello Linphone Incoming");
-        incoming_core = factory.createCore(null, null, this);
-
-        incoming_login(username, password);
-
-        findViewById(R.id.incoming_hang_up).setEnabled(false);
-        findViewById(R.id.incoming_answer).setEnabled(false);
-        findViewById(R.id.incoming_mute_mic).setEnabled(false);
-        findViewById(R.id.incoming_toggle_speaker).setEnabled(false);
-
-        findViewById(R.id.incoming_hang_up).setOnClickListener(view -> {
-            // Terminates the call, whether it is ringing or running
-            if (incoming_core.getCurrentCall() != null) {
-                incoming_core.getCurrentCall().terminate();
-            }
-        });
-
-        findViewById(R.id.incoming_answer).setOnClickListener(view -> {
-            // if we wanted, we could create a CallParams object
-            // and answer using this object to make changes to the call configuration
-            // (see OutgoingCall tutorial)
-            if (incoming_core.getCurrentCall() != null) {
-                incoming_core.getCurrentCall().accept();
-            }
-        });
-
-        findViewById(R.id.incoming_mute_mic).setOnClickListener(view -> {
-            // The following toggles the microphone, disabling completely / enabling the sound capture
-            // from the device microphone
-            incoming_core.enableMic(!incoming_core.micEnabled());
-        });
-
-        findViewById(R.id.incoming_toggle_speaker).setOnClickListener(view -> toggleSpeaker());
 
 
         // Outgoing call
@@ -163,7 +127,7 @@ public class BoxChatActivity extends AppCompatActivity {
             if (state == Call.State.IncomingReceived) {
                 boolean isScreenLocked = isScreenLocked();
                 NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-                String channelId = "incoming_call_channel";
+                String channelId = MyApplication.CHANNEL_ID;
                 String channelName = "Incoming Call Notifications";
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -236,38 +200,6 @@ public class BoxChatActivity extends AppCompatActivity {
 
     };
 
-    private boolean isScreenLocked() {
-        KeyguardManager keyguardManager = (KeyguardManager) getSystemService(KEYGUARD_SERVICE);
-        return keyguardManager.isKeyguardLocked() || keyguardManager.isDeviceLocked();
-    }
-
-    // Incoming toggleSpeaker
-    private void toggleSpeaker() {
-        // Get the currently used audio device
-        AudioDevice currentAudioDevice = incoming_core.getCurrentCall() != null ? incoming_core.getCurrentCall().getOutputAudioDevice() : null;
-        boolean speakerEnabled = currentAudioDevice != null && currentAudioDevice.getType() == AudioDevice.Type.Speaker;
-
-        // We can get a list of all available audio devices using
-        // Note that on tablets for example, there may be no Earpiece device
-        for (AudioDevice audioDevice : incoming_core.getAudioDevices()) {
-            if (speakerEnabled && audioDevice.getType() == AudioDevice.Type.Earpiece) {
-                if (incoming_core.getCurrentCall() != null) {
-                    incoming_core.getCurrentCall().setOutputAudioDevice(audioDevice);
-                }
-                return;
-            } else if (!speakerEnabled && audioDevice.getType() == AudioDevice.Type.Speaker) {
-                if (incoming_core.getCurrentCall() != null) {
-                    incoming_core.getCurrentCall().setOutputAudioDevice(audioDevice);
-                }
-                return;
-            }
-            /* If we wanted to route the audio to a bluetooth headset
-            else if (audioDevice.type == AudioDevice.Type.Bluetooth) {
-                core.currentCall?.outputAudioDevice = audioDevice
-            }*/
-        }
-    }
-
     // Outgoing CoreListener
     private final CoreListenerStub outgoingCallCoreListener = new CoreListenerStub() {
         @Override
@@ -280,7 +212,60 @@ public class BoxChatActivity extends AppCompatActivity {
         public void onCallStateChanged(Core core, Call call, Call.State state, String message) {
 
             if (state == Call.State.OutgoingInit) {
-            } else if (state == Call.State.OutgoingProgress) {
+            } else if (state == Call.State.IncomingReceived) {
+                boolean isScreenLocked = isScreenLocked();
+                NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+                String channelId = "incoming_call_channel";
+                String channelName = "Incoming Call Notifications";
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    NotificationChannel channel = new NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_HIGH);
+                    notificationManager.createNotificationChannel(channel);
+                }
+
+                Intent fullScreenIntent = new Intent(BoxChatActivity.this, IncomingCallActivity.class);
+                fullScreenIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                fullScreenIntent.putExtra("CALL_ID", call.getCallLog() != null ? call.getCallLog().getCallId() : null);
+                fullScreenIntent.putExtra("username", username);
+                fullScreenIntent.putExtra("password", password);
+                fullScreenIntent.putExtra("domain", domain);
+                fullScreenIntent.putExtra("transport_type", TransportType.Tls);
+
+                PendingIntent fullScreenPendingIntent = PendingIntent.getActivity(
+                        BoxChatActivity.this,
+                        0,
+                        fullScreenIntent,
+                        PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+                );
+
+                NotificationCompat.Builder notificationBuilder;
+
+                if (isScreenLocked) {
+                    // Full-screen notification for locked screen
+                    notificationBuilder = new NotificationCompat.Builder(BoxChatActivity.this, channelId)
+                            .setContentTitle(call.getRemoteAddress().getUsername())
+                            .setContentText("You have an incoming call")
+                            .setSmallIcon(R.mipmap.ic_launcher)
+                            .setFullScreenIntent(fullScreenPendingIntent, true)
+                            .setPriority(NotificationCompat.PRIORITY_HIGH)
+                            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                            .setCategory(NotificationCompat.CATEGORY_CALL);
+                } else {
+                    // Heads-up notification for unlocked screen
+                    notificationBuilder = new NotificationCompat.Builder(BoxChatActivity.this, channelId)
+                            .setContentTitle(call.getRemoteAddress().getUsername())
+                            .setContentText("You have an incoming call")
+                            .setSmallIcon(R.mipmap.ic_launcher)
+                            .setContentIntent(fullScreenPendingIntent)
+                            .setPriority(NotificationCompat.PRIORITY_HIGH)
+                            .setCategory(NotificationCompat.CATEGORY_CALL);
+                }
+
+                notificationManager.notify(1, notificationBuilder.build());
+
+                ((TextView) findViewById(R.id.incoming_remote_address)).setText(call.getRemoteAddress().getUsername());
+            }
+            else if (state == Call.State.OutgoingProgress) {
             } else if (state == Call.State.OutgoingRinging) {
             } else if (state == Call.State.Connected) {
             } else if (state == Call.State.StreamsRunning) {
@@ -323,6 +308,11 @@ public class BoxChatActivity extends AppCompatActivity {
             }
         }
     };
+
+    private boolean isScreenLocked() {
+        KeyguardManager keyguardManager = (KeyguardManager) getSystemService(KEYGUARD_SERVICE);
+        return keyguardManager.isKeyguardLocked() || keyguardManager.isDeviceLocked();
+    }
 
     // OutgoingCall
     private void outgoingCall() {
@@ -399,40 +389,6 @@ public class BoxChatActivity extends AppCompatActivity {
         }
     }
 
-    // Incoming Login
-    private void incoming_login(String username, String password) {
-        domain = "sip.linphone.org";
-
-        TransportType transportType = TransportType.Tls;
-
-        AuthInfo authInfo = Factory.instance().createAuthInfo(username, null, password, null, null, domain, null);
-
-        AccountParams params = incoming_core.createAccountParams();
-        Address identity = Factory.instance().createAddress("sip:" + username + "@" + domain);
-        params.setIdentityAddress(identity);
-
-        Address address = Factory.instance().createAddress("sip:" + domain);
-        if (address != null) {
-            address.setTransport(transportType);
-        }
-
-        params.setServerAddress(address);
-        params.setRegisterEnabled(true);
-
-        Account account = incoming_core.createAccount(params);
-
-        incoming_core.addAuthInfo(authInfo);
-        incoming_core.addAccount(account);
-
-        incoming_core.setDefaultAccount(account);
-        incoming_core.addListener(incomingCallCoreListener);
-        incoming_core.start();
-
-        // We will need the RECORD_AUDIO permission for video call
-        if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-            requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO}, 0);
-        }
-    }
 
     // Outgoing Login
     private void outgoing_login(String username, String password) {

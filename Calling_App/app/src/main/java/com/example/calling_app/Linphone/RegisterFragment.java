@@ -1,6 +1,7 @@
 package com.example.calling_app.Linphone;
 
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 
 import androidx.fragment.app.Fragment;
@@ -26,6 +27,7 @@ import org.linphone.core.tools.Log;
 
 public class RegisterFragment extends Fragment {
 
+    private static final String TAG = "RegisterFragment";
     private Core core;
 
     private String username;
@@ -35,6 +37,17 @@ public class RegisterFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View v = inflater.inflate(R.layout.fragment_register, container, false);
+
+        TextView registerLink = v.findViewById(R.id.create_email_account);
+        registerLink.setOnClickListener(view -> {
+            String url = getString(R.string.register_here);
+            try {
+                Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                startActivity(browserIntent);
+            } catch (Exception e) {
+                Log.e(TAG, "Can't open URL: " + url, e);
+            }
+        });
 
         Factory factory = Factory.instance();
         factory.setDebugMode(true, "Hello Linphone");

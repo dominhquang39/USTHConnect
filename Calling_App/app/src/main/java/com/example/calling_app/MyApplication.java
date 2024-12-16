@@ -5,7 +5,7 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.os.Build;
 
-public class PushNoti extends Application {
+public class MyApplication extends Application {
 
     public static final String CHANNEL_ID = "call_notification_id";
 
