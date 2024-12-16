@@ -19,6 +19,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 import androidx.viewpager2.widget.ViewPager2;
 
@@ -32,6 +33,7 @@ import java.net.URL;
 import vn.edu.usth.connect.MainActivity;
 import vn.edu.usth.connect.R;
 import vn.edu.usth.connect.Schedule.Fragment_schedule_changing;
+import vn.edu.usth.connect.StudyBuddy.Welcome.WelcomeFragment;
 
 public class Study_Buddy_Activity extends AppCompatActivity {
 
@@ -117,6 +119,8 @@ public class Study_Buddy_Activity extends AppCompatActivity {
         });
 
         navigator_drawer_function();
+
+        navigateFragment();
 
         update_picture();
     }
@@ -224,5 +228,13 @@ public class Study_Buddy_Activity extends AppCompatActivity {
                 }
             });
         }
+    }
+
+    private void navigateFragment() {
+        Fragment welcomeFragment = new WelcomeFragment();
+        FragmentTransaction fragmentTransaction = getSupportFragmentManager().beginTransaction();
+        fragmentTransaction.replace(android.R.id.content, welcomeFragment);
+        fragmentTransaction.addToBackStack(null);
+        fragmentTransaction.commit();
     }
 }

@@ -6,6 +6,7 @@
     android:layout_height="match_parent"
     android:background="@color/background"
     android:orientation="vertical"
+    android:id="@+id/welcome_fragment_page"
     tools:context=".StudyBuddy.Welcome.WelcomeFragment">
 
     <!-- Header -->

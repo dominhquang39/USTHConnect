@@ -16,6 +16,7 @@ import vn.edu.usth.connect.R;
 public class WelcomeFragment extends Fragment {
 
     private Button nextButton;
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -23,17 +24,13 @@ public class WelcomeFragment extends Fragment {
         nextButton = v.findViewById(R.id.create_new_account);
 
         nextButton.setOnClickListener(view -> {
-            navigateFragment(new NameFragment());
+            Fragment nameFragment = new NameFragment();
+            FragmentTransaction fragmentTransaction = requireActivity().getSupportFragmentManager().beginTransaction();
+            fragmentTransaction.replace(android.R.id.content, nameFragment);
+            fragmentTransaction.addToBackStack(null);
+            fragmentTransaction.commit();
         });
 
         return v;
-    }
-
-    private void navigateFragment(Fragment fragment) {
-        FragmentManager fragmentManager = getActivity().getSupportFragmentManager();
-        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-        fragmentTransaction.replace(R.id.fragment_container, fragment);
-        fragmentTransaction.addToBackStack(null);
-        fragmentTransaction.commit();
     }
 }

@@ -46,7 +46,7 @@ public class DescriptionFragment extends Fragment {
     private void navigateFragment(Fragment fragment) {
         FragmentManager fragmentManager = getActivity().getSupportFragmentManager();
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-        fragmentTransaction.replace(R.id.fragment_container, fragment);
+        fragmentTransaction.replace(android.R.id.content, fragment);
         fragmentTransaction.addToBackStack(null);
         fragmentTransaction.commit();
     }
