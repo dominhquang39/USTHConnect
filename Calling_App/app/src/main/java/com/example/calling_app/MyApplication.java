@@ -5,14 +5,30 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.os.Build;
 
+import androidx.annotation.NonNull;
+
+import org.linphone.core.*;
+
 public class MyApplication extends Application {
 
     public static final String CHANNEL_ID = "call_notification_id";
+    private Core core;
 
     @Override
     public void onCreate() {
         super.onCreate();
+
+        Factory factory = Factory.instance();
+        factory.setDebugMode(true, "Hello Linphone");
+
+        core = factory.createCore(null, null, this);
+        core.addListener(new CoreListenerStub());
+        core.start();
         createChannelNoti();
+    }
+
+    public Core getLinphoneCore() {
+        return core;
     }
 
     private void createChannelNoti() {

@@ -1,6 +1,6 @@
 package com.example.calling_app;
 
-import static com.example.calling_app.PushNoti.CHANNEL_ID;
+import static com.example.calling_app.MyApplication.CHANNEL_ID;
 
 import android.app.NotificationChannel;
 import android.app.NotificationManager;

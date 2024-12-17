@@ -26,6 +26,7 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.example.calling_app.CallService;
 import com.example.calling_app.IncomingCallActivity;
 import com.example.calling_app.MyApplication;
 import com.example.calling_app.R;
@@ -48,6 +49,8 @@ public class BoxChatActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.activity_box_chat);
+        MyApplication app = (MyApplication) getApplicationContext();
+        outgoing_core = app.getLinphoneCore();
 
         // Incoming Call
         Intent intent = getIntent();
@@ -60,9 +63,6 @@ public class BoxChatActivity extends AppCompatActivity {
 
 
         // Outgoing call
-        Factory factory2 = Factory.instance();
-        factory2.setDebugMode(true, "Hello Linphone Outcoming");
-        outgoing_core = factory2.createCore(null, null, this);
 
         outgoing_login(username, password);
 
@@ -101,105 +101,6 @@ public class BoxChatActivity extends AppCompatActivity {
         });
     }
 
-    // Incoming CoreListenerStub
-    private final CoreListenerStub incomingCallCoreListener = new CoreListenerStub() {
-        @Override
-        public void onAccountRegistrationStateChanged(Core core, Account account, RegistrationState state, String message) {
-            ((TextView) findViewById(R.id.registration_status)).setText(message);
-        }
-
-        @Override
-        public void onAudioDeviceChanged(Core core, AudioDevice audioDevice) {
-            // This callback will be triggered when a successful audio device has been changed
-        }
-
-        @Override
-        public void onAudioDevicesListUpdated(Core core) {
-            // This callback will be triggered when the available devices list has changed,
-            // for example after a bluetooth headset has been connected/disconnected.
-        }
-
-        @Override
-        public void onCallStateChanged(Core core, Call call, Call.State state, String message) {
-            findViewById(R.id.header_layout).setVisibility(View.GONE);
-
-            // When a call is received
-            if (state == Call.State.IncomingReceived) {
-                boolean isScreenLocked = isScreenLocked();
-                NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-                String channelId = MyApplication.CHANNEL_ID;
-                String channelName = "Incoming Call Notifications";
-
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    NotificationChannel channel = new NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_HIGH);
-                    notificationManager.createNotificationChannel(channel);
-                }
-
-                Intent fullScreenIntent = new Intent(BoxChatActivity.this, IncomingCallActivity.class);
-                fullScreenIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                fullScreenIntent.putExtra("CALL_ID", call.getCallLog() != null ? call.getCallLog().getCallId() : null);
-                fullScreenIntent.putExtra("username", username);
-                fullScreenIntent.putExtra("password", password);
-                fullScreenIntent.putExtra("domain", domain);
-                fullScreenIntent.putExtra("transport_type", TransportType.Tls);
-
-                PendingIntent fullScreenPendingIntent = PendingIntent.getActivity(
-                        BoxChatActivity.this,
-                        0,
-                        fullScreenIntent,
-                        PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
-                );
-
-                NotificationCompat.Builder notificationBuilder;
-
-                if (isScreenLocked) {
-                    // Full-screen notification for locked screen
-                    notificationBuilder = new NotificationCompat.Builder(BoxChatActivity.this, channelId)
-                            .setContentTitle(call.getRemoteAddress().getUsername())
-                            .setContentText("You have an incoming call")
-                            .setSmallIcon(R.mipmap.ic_launcher)
-                            .setFullScreenIntent(fullScreenPendingIntent, true)
-                            .setPriority(NotificationCompat.PRIORITY_HIGH)
-                            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-                            .setCategory(NotificationCompat.CATEGORY_CALL);
-                } else {
-                    // Heads-up notification for unlocked screen
-                    notificationBuilder = new NotificationCompat.Builder(BoxChatActivity.this, channelId)
-                            .setContentTitle(call.getRemoteAddress().getUsername())
-                            .setContentText("You have an incoming call")
-                            .setSmallIcon(R.mipmap.ic_launcher)
-                            .setContentIntent(fullScreenPendingIntent)
-                            .setPriority(NotificationCompat.PRIORITY_HIGH)
-                            .setCategory(NotificationCompat.CATEGORY_CALL);
-                }
-
-                notificationManager.notify(1, notificationBuilder.build());
-
-                ((TextView) findViewById(R.id.incoming_remote_address)).setText(call.getRemoteAddress().getUsername());
-                String remoteAdress = call.getRemoteAddress().asStringUriOnly();
-            } else if (state == Call.State.Connected) {
-                findViewById(R.id.incoming_mute_mic).setEnabled(true);
-                findViewById(R.id.incoming_toggle_speaker).setEnabled(true);
-
-                findViewById(R.id.incoming_toggle_speaker).setVisibility(View.VISIBLE);
-                findViewById(R.id.incoming_mute_mic).setVisibility(View.VISIBLE);
-
-            } else if (state == Call.State.Released) {
-
-                findViewById(R.id.incoming_hang_up).setEnabled(false);
-                findViewById(R.id.incoming_answer).setEnabled(false);
-                findViewById(R.id.incoming_mute_mic).setEnabled(false);
-                findViewById(R.id.incoming_toggle_speaker).setEnabled(false);
-
-                ((TextView) findViewById(R.id.incoming_remote_address)).setText("");
-
-                findViewById(R.id.incoming_call_layout).setVisibility(View.GONE);
-                findViewById(R.id.header_layout).setVisibility(View.VISIBLE);
-            }
-        }
-
-    };
-
     // Outgoing CoreListener
     private final CoreListenerStub outgoingCallCoreListener = new CoreListenerStub() {
         @Override
@@ -213,57 +114,18 @@ public class BoxChatActivity extends AppCompatActivity {
 
             if (state == Call.State.OutgoingInit) {
             } else if (state == Call.State.IncomingReceived) {
-                boolean isScreenLocked = isScreenLocked();
-                NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-                String channelId = "incoming_call_channel";
-                String channelName = "Incoming Call Notifications";
+                Intent serviceIntent = new Intent(BoxChatActivity.this, CallService.class);
+                serviceIntent.putExtra("username", username);
+                serviceIntent.putExtra("password", password);
+                serviceIntent.putExtra("domain", domain);
+                serviceIntent.putExtra("transport_type", TransportType.Tls);
+                serviceIntent.putExtra("remote user", call.getRemoteAddress().getUsername());
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    NotificationChannel channel = new NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_HIGH);
-                    notificationManager.createNotificationChannel(channel);
-                }
-
-                Intent fullScreenIntent = new Intent(BoxChatActivity.this, IncomingCallActivity.class);
-                fullScreenIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                fullScreenIntent.putExtra("CALL_ID", call.getCallLog() != null ? call.getCallLog().getCallId() : null);
-                fullScreenIntent.putExtra("username", username);
-                fullScreenIntent.putExtra("password", password);
-                fullScreenIntent.putExtra("domain", domain);
-                fullScreenIntent.putExtra("transport_type", TransportType.Tls);
-
-                PendingIntent fullScreenPendingIntent = PendingIntent.getActivity(
-                        BoxChatActivity.this,
-                        0,
-                        fullScreenIntent,
-                        PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
-                );
-
-                NotificationCompat.Builder notificationBuilder;
-
-                if (isScreenLocked) {
-                    // Full-screen notification for locked screen
-                    notificationBuilder = new NotificationCompat.Builder(BoxChatActivity.this, channelId)
-                            .setContentTitle(call.getRemoteAddress().getUsername())
-                            .setContentText("You have an incoming call")
-                            .setSmallIcon(R.mipmap.ic_launcher)
-                            .setFullScreenIntent(fullScreenPendingIntent, true)
-                            .setPriority(NotificationCompat.PRIORITY_HIGH)
-                            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-                            .setCategory(NotificationCompat.CATEGORY_CALL);
+                    startForegroundService(serviceIntent);
                 } else {
-                    // Heads-up notification for unlocked screen
-                    notificationBuilder = new NotificationCompat.Builder(BoxChatActivity.this, channelId)
-                            .setContentTitle(call.getRemoteAddress().getUsername())
-                            .setContentText("You have an incoming call")
-                            .setSmallIcon(R.mipmap.ic_launcher)
-                            .setContentIntent(fullScreenPendingIntent)
-                            .setPriority(NotificationCompat.PRIORITY_HIGH)
-                            .setCategory(NotificationCompat.CATEGORY_CALL);
+                    startService(serviceIntent);
                 }
-
-                notificationManager.notify(1, notificationBuilder.build());
-
-                ((TextView) findViewById(R.id.incoming_remote_address)).setText(call.getRemoteAddress().getUsername());
             }
             else if (state == Call.State.OutgoingProgress) {
             } else if (state == Call.State.OutgoingRinging) {
